@@ -423,22 +423,28 @@ body.is-idle { cursor: none; }
   position: fixed;
   inset: 0;
   z-index: 35;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
   background: rgba(0,0,0,.0);
   transition: background .6s ease;
 }
 .endcard.is-visible { background: #000; }
-.endcard__btn {
+.endcard__link, .endcard__btn {
   background: none; border: none; color: #fff;
   font-family: var(--mono);
   text-transform: uppercase;
   letter-spacing: .3em;
   font-size: clamp(14px, 2vw, 20px);
+  text-decoration: none;
   cursor: pointer;
   opacity: 0;
-  transition: opacity .5s ease .3s;
+  transition: opacity .5s ease .3s, color .18s ease;
 }
+.endcard__link:hover, .endcard__btn:hover { color: #bbb; }
+.endcard.is-visible .endcard__link,
 .endcard.is-visible .endcard__btn { opacity: 1; }
 
 [hidden] { display: none !important; }
