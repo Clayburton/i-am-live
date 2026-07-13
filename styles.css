@@ -1,0 +1,449 @@
+/* ============================================================
+   i am — live lyric video
+   Pure black & white kinetic typography, DOM-rendered,
+   synced to the audio clock. Fills any viewport shape.
+   ============================================================ */
+
+:root {
+  --bg: #000;
+  --fg: #fff;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: var(--mono);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.defs { position: absolute; width: 0; height: 0; pointer-events: none; }
+
+/* ---------------- THE STAGE ---------------- */
+.stage {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  overflow: hidden;
+  z-index: 1;
+  /* the show is hidden until the gate is passed */
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.stage.is-live { opacity: 1; }
+
+/* holds all cues */
+.cue-layer { position: absolute; inset: 0; }
+
+/* inversion disc — a circle that flips black↔white wherever the cursor goes */
+.inv-disc {
+  position: absolute;
+  width: 96px; height: 96px;    /* 48px radius — matches the egg reveal radius exactly */
+  border-radius: 50%;
+  background: #fff;
+  mix-blend-mode: difference;   /* white through difference = invert everything beneath */
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .25s ease;
+  z-index: 3;
+}
+.inv-disc.is-on { opacity: 1; }
+
+/* while dragging a word */
+body.is-dragging, body.is-dragging .cue { cursor: grabbing; }
+
+/* play bar + fullscreen removed (distracting) — spacebar still starts/stops */
+.chrome, .topbar { display: none !important; }
+
+/* during the show: no classic arrow — the spotlight IS the cursor.
+   only interactive things get a cursor: words = hand, buttons = click-hand, input = I-beam */
+body.playing { cursor: none; }
+body.playing .cue { cursor: grab; }
+body.playing.is-dragging, body.playing.is-dragging .cue { cursor: grabbing; }
+body.playing .lyric-btn { cursor: pointer; }
+body.playing .whybox__inner { cursor: default; }
+body.playing .whybox__input { cursor: text; }
+body.playing .whybox__go { cursor: pointer; }
+
+/* easter-egg layer: hidden lyrics, revealed only within a torch-circle at the cursor */
+.egg-layer {
+  position: absolute; inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(circle 48px at var(--sx,-999px) var(--sy,-999px), #000 72%, transparent 100%);
+          mask-image: radial-gradient(circle 48px at var(--sx,-999px) var(--sy,-999px), #000 72%, transparent 100%);
+}
+.egg {
+  position: absolute;
+  color: var(--fg);
+  white-space: pre;
+  transform: translate(-50%, -50%);
+  opacity: .85;
+}
+.egg-cover { left: 50%; top: 50%; }
+.cover-art {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4vh;
+  width: 62vmin; height: 62vmin;
+  border: 2px solid var(--fg);
+}
+.cover-am { font-family: "Playfair Display", Georgia, serif; font-style: italic; font-weight: 900; font-size: 20vmin; line-height: .9; color: var(--fg); }
+.cover-by { font-family: var(--mono); text-transform: uppercase; letter-spacing: .3em; font-size: 2.2vmin; color: var(--fg); }
+
+/* red / scary escalation from the lyric buttons */
+.scare-tint {
+  position: absolute; inset: 0;
+  z-index: 4;
+  background: #e60000;
+  mix-blend-mode: multiply;      /* whites turn red as it escalates */
+  opacity: var(--scare, 0);
+  pointer-events: none;
+}
+
+/* interactive lyric buttons */
+.ui-layer { position: fixed; inset: 0; z-index: 33; pointer-events: none; }
+.lyric-btn {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  font-family: var(--mono);
+  text-transform: uppercase; letter-spacing: .2em;
+  font-size: clamp(13px, 2vw, 18px);
+  color: #fff; background: #111;
+  border: 2px solid #fff;              /* white border reads on black; black fill reads on white */
+  border-radius: 999px;
+  padding: .7em 1.6em;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,.45);
+  transition: left .12s ease, top .12s ease;
+  animation: btnIn .25s ease;
+}
+.lyric-btn.is-runaway { transition: left .05s linear, top .05s linear; border-color: #e33; }
+.lyric-btn:hover { filter: brightness(1.2); }
+.lyric-btn.is-hit { animation: btnHit .2s ease; }
+@keyframes btnIn  { from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); } }
+@keyframes btnHit { 50% { transform: translate(-50%, -50%) scale(1.18); } }
+
+/* dramatic jolt on a click */
+body.is-jolt #stage { animation: jolt .34s ease; }
+@keyframes jolt {
+  0%,100% { transform: translate(0,0); }
+  14% { transform: translate(-7px, 4px); }  28% { transform: translate(6px,-5px); }
+  42% { transform: translate(-6px,-3px); }  57% { transform: translate(5px, 5px); }
+  71% { transform: translate(-4px, 2px); }  85% { transform: translate(3px,-2px); }
+}
+
+/* "why didn't you care?" prompt (bottom card, non-blocking) */
+.whybox {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  z-index: 34;
+  display: flex; justify-content: center;
+  padding: 0 16px calc(22px + env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+.whybox__inner {
+  pointer-events: auto;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center;
+  max-width: 620px; width: 100%;
+  padding: 13px 18px;
+  background: rgba(10,10,10,.82);
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 12px;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  animation: btnIn .3s ease;
+}
+.whybox__q { font-family: "Playfair Display", Georgia, serif; font-style: italic; font-size: clamp(16px, 2.4vw, 22px); color: #fff; }
+.whybox__input {
+  flex: 1 1 180px; min-width: 130px;
+  background: transparent; border: none; border-bottom: 1.5px solid rgba(255,255,255,.6);
+  color: #fff; font-family: var(--mono); font-size: 14px; padding: 6px 2px; outline: none;
+}
+.whybox__input::placeholder { color: rgba(255,255,255,.4); }
+.whybox__go {
+  flex: none; font-family: var(--mono); text-transform: uppercase; letter-spacing: .15em;
+  font-size: 12px; color: #111; background: #fff; border: none; border-radius: 999px;
+  padding: .6em 1.2em; cursor: pointer;
+}
+.whybox__go:hover { background: #ddd; }
+
+/* Each rendered lyric line. Positioned + transformed by the engine. */
+.cue {
+  position: absolute;
+  color: var(--fg);
+  white-space: pre;           /* honour \n only; never auto-wrap */
+  line-height: 0.98;
+  will-change: transform, opacity;
+  transform-origin: center center;
+  pointer-events: auto;         /* grabbable — drag a word to dissolve it */
+  cursor: grab;
+  user-select: none;
+  letter-spacing: 0;
+  /* font-size is set inline (vmin) or overridden to a base px for fit-scaling */
+}
+
+/* type roles ---------------------------------------------- */
+.cue.r-sans   { font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 400; }
+.cue.r-impact { font-family: "Archivo Black", "Helvetica Neue", Arial, sans-serif; font-weight: 400; }
+.cue.r-cond   { font-family: "Anton", "Archivo Black", sans-serif; font-weight: 400; letter-spacing: .005em; }
+.cue.r-serif  { font-family: "Playfair Display", Georgia, "Times New Roman", serif; font-weight: 400; }
+.cue.r-serifIt{ font-family: "Playfair Display", Georgia, "Times New Roman", serif; font-style: italic; font-weight: 400; }
+.cue.r-mono   { font-family: var(--mono); font-weight: 400; }
+.cue.r-hook   { font-family: "Baloo 2", "Archivo Black", sans-serif; font-weight: 800; }
+
+.cue.is-melt { filter: url(#melt); }
+.cue.is-drip { filter: url(#drip); }
+
+/* ---------------- LANDING ---------------- */
+.landing {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: #fff;
+  color: #111;
+  display: grid;
+  place-items: center;
+  transition: opacity .5s ease;
+}
+.landing.is-gone { opacity: 0; pointer-events: none; }
+
+.landing__mark { text-align: center; padding: 6vw; }
+.landing__eyebrow {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .34em;
+  font-size: clamp(11px, 1.4vw, 15px);
+  color: #111;
+  margin-left: .34em;
+  margin-bottom: 2.2rem;
+}
+.landing__title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: clamp(72px, 22vw, 260px);
+  line-height: .9;
+  color: #111;
+  margin-bottom: 3rem;
+}
+.landing__hint {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .28em;
+  font-size: clamp(9px, 1.1vw, 12px);
+  color: #8b8b8b;
+  margin-top: 2.4rem;
+}
+
+.playbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.playbtn:hover { transform: scale(1.08); }
+.playbtn:active { transform: scale(0.96); }
+.playbtn:focus-visible { outline: 2px solid #111; outline-offset: 6px; border-radius: 4px; }
+.playbtn__tri {
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: clamp(22px, 3.6vw, 40px) 0 clamp(22px, 3.6vw, 40px) clamp(34px, 5.6vw, 62px);
+  border-color: transparent transparent transparent #111;
+}
+
+/* ---------------- FLASHING-LIGHTS GATE ---------------- */
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: #000;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  transition: opacity .4s ease;
+}
+.gate.is-gone { opacity: 0; pointer-events: none; }
+.gate__inner { text-align: center; padding: 8vw; }
+.gate__warn {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .28em;
+  line-height: 1.9;
+  font-size: clamp(15px, 2.6vw, 26px);
+  margin-bottom: 3rem;
+}
+.gate__toggle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: .7em;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  font-size: clamp(10px, 1.3vw, 13px);
+  color: #cfcfcf;
+  cursor: pointer;
+  margin-bottom: 2.6rem;
+}
+.gate__toggle input { width: 15px; height: 15px; accent-color: #fff; cursor: pointer; }
+.gate__enter {
+  display: inline-block;
+  background: none;
+  border: none;
+  color: #fff;
+  font-family: var(--mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3em;
+  font-size: clamp(15px, 2vw, 22px);
+  cursor: pointer;
+  padding: .6em 1em;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.gate__enter:hover { transform: translateY(-2px); }
+.gate__enter:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+
+/* ---------------- PLAYBACK CHROME ---------------- */
+.chrome {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,0));
+  opacity: 0;
+  transition: opacity .35s ease;
+  pointer-events: none;
+}
+.chrome.is-visible { opacity: 1; pointer-events: auto; }
+.chrome__btn {
+  flex: none;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.35);
+  color: #fff;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  mix-blend-mode: difference;   /* stays readable over black or white */
+}
+.chrome__scrub {
+  flex: 1 1 auto;
+  height: 4px;
+  background: rgba(180,180,180,.45);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  mix-blend-mode: difference;
+}
+.chrome__fill {
+  position: absolute; inset: 0 auto 0 0;
+  width: 0%;
+  background: #fff;
+  border-radius: 2px;
+}
+.chrome__time {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: #fff;
+  mix-blend-mode: difference;
+  min-width: 34px;
+  text-align: right;
+}
+
+/* ---------------- TOP BAR (fullscreen) ---------------- */
+.topbar {
+  position: fixed;
+  top: 0; right: 0;
+  z-index: 31;
+  padding: 14px calc(14px + env(safe-area-inset-right)) 14px 14px;
+  opacity: 0;
+  transition: opacity .35s ease;
+  pointer-events: none;
+}
+.topbar.is-visible { opacity: 1; pointer-events: auto; }
+.topbar__btn {
+  display: grid;
+  place-items: center;
+  width: 40px; height: 40px;
+  background: #808080;          /* solid mid-gray: sits between black & white, always visible */
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  transition: background .18s ease;
+}
+.topbar__btn:hover { background: #949494; }
+.topbar__btn svg { width: 20px; height: 20px; }
+.topbar__btn .ic-close { display: none; }
+.topbar__btn.is-on .ic-open { display: none; }
+.topbar__btn.is-on .ic-close { display: block; }
+
+/* transient sync-nudge readout */
+.toast {
+  position: fixed;
+  left: 50%; bottom: 64px;
+  transform: translateX(-50%);
+  z-index: 50;
+  padding: 8px 14px;
+  background: rgba(0,0,0,.72);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .08em;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity .18s ease;
+  pointer-events: none;
+}
+.toast.is-on { opacity: 1; }
+
+/* hide the cursor while the show is playing and the mouse is idle */
+body.is-idle { cursor: none; }
+
+/* ---------------- END CARD ---------------- */
+.endcard {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,.0);
+  transition: background .6s ease;
+}
+.endcard.is-visible { background: #000; }
+.endcard__btn {
+  background: none; border: none; color: #fff;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .3em;
+  font-size: clamp(14px, 2vw, 20px);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .5s ease .3s;
+}
+.endcard.is-visible .endcard__btn { opacity: 1; }
+
+[hidden] { display: none !important; }
+
+/* Respect reduced motion: soften filters by default (engine also damps strobe) */
+@media (prefers-reduced-motion: reduce) {
+  .cue.is-melt, .cue.is-drip { filter: none; }
+}

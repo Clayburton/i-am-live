@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>i am — clay and kelsy</title>
+
+  <!-- Fonts: brand mono (Courier Prime) + the display faces used in the video -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Baloo+2:wght@700;800&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css?v=5" />
+</head>
+<body>
+  <!-- ============ THE SHOW ============ -->
+  <div id="stage" class="stage" aria-hidden="true">
+    <div id="cueLayer" class="cue-layer"></div>
+    <div id="eggLayer" class="egg-layer" aria-hidden="true"></div>
+    <div id="invDisc" class="inv-disc" aria-hidden="true"></div>
+    <div id="scareTint" class="scare-tint" aria-hidden="true"></div>
+  </div>
+  <div id="uiLayer" class="ui-layer"></div>
+
+  <!-- "why didn't you care?" — offered during the you-don't-care / do-you / not-like stretch -->
+  <div id="whyBox" class="whybox" hidden>
+    <div class="whybox__inner">
+      <span class="whybox__q">why didn't you care?</span>
+      <input id="whyInput" class="whybox__input" type="text" maxlength="64" autocomplete="off" spellcheck="false" placeholder="type it, then hit enter…" />
+      <button id="whySubmit" class="whybox__go" type="button">enter</button>
+    </div>
+  </div>
+
+  <!-- Layer that hosts distortion-filtered cues so SVG filters don't clip -->
+  <!-- (cues are appended into #stage directly; filters are referenced by url()) -->
+
+  <!-- ============ LANDING ============ -->
+  <section id="landing" class="landing">
+    <div class="landing__mark">
+      <div class="landing__eyebrow">clay and kelsy</div>
+      <h1 class="landing__title">i am</h1>
+      <button id="playBtn" class="playbtn" type="button" aria-label="Play">
+        <span class="playbtn__tri" aria-hidden="true"></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ FLASHING-LIGHTS GATE ============ -->
+  <section id="gate" class="gate" hidden>
+    <div class="gate__inner">
+      <p class="gate__warn">there are flashing<br />lights<br />in this video</p>
+      <label class="gate__toggle">
+        <input type="checkbox" id="reduceChk" />
+        <span>reduce flashing</span>
+      </label>
+      <button id="enterBtn" class="gate__enter" type="button">[ enter ]</button>
+    </div>
+  </section>
+
+  <!-- ============ TOP BAR (fullscreen, auto-hides) ============ -->
+  <div id="topbar" class="topbar" hidden>
+    <button id="fsBtn" class="topbar__btn" type="button" aria-label="Fullscreen (f)">
+      <svg class="ic-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      <svg class="ic-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3a2 2 0 0 0 2-2V3M20 8h-3a2 2 0 0 1-2-2V3M4 16h3a2 2 0 0 1 2 2v3M20 16h-3a2 2 0 0 0-2 2v3"/></svg>
+    </button>
+  </div>
+
+  <!-- ============ PLAYBACK CHROME (auto-hides) ============ -->
+  <div id="chrome" class="chrome" hidden>
+    <div id="scrub" class="chrome__scrub" role="slider" aria-label="Seek" tabindex="0">
+      <div id="scrubFill" class="chrome__fill"></div>
+    </div>
+    <div id="timecode" class="chrome__time">0:00</div>
+  </div>
+
+  <!-- transient readout for the audio-sync nudge -->
+  <div id="toast" class="toast" aria-hidden="true"></div>
+
+  <!-- ============ END CARD ============ -->
+  <section id="endcard" class="endcard" hidden>
+    <button id="replayBtn" class="endcard__btn" type="button">[ replay ]</button>
+  </section>
+
+  <!-- audio clock -->
+  <audio id="song" src="assets/i-am.mp3" preload="auto"></audio>
+
+  <!-- ============ SVG DISTORTION FILTERS ============ -->
+  <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <!-- melting / liquify used on the "I AM" hook -->
+      <filter id="melt" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02" numOctaves="2" seed="7" result="n">
+          <animate attributeName="baseFrequency" dur="7s" repeatCount="indefinite"
+                   values="0.009 0.016; 0.02 0.036; 0.012 0.022; 0.009 0.016" />
+        </feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="30" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+
+      <!-- vertical drip used on "moving on": long smooth downward smears, word stays legible -->
+      <filter id="drip" x="-25%" y="-30%" width="150%" height="260%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.006 0.028" numOctaves="2" seed="4" result="n">
+          <animate attributeName="baseFrequency" dur="6s" repeatCount="indefinite"
+                   values="0.006 0.020; 0.009 0.045; 0.006 0.020" />
+        </feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="18" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
+
+  <script src="cues.js?v=5"></script>
+  <script src="app.js?v=5"></script>
+</body>
+</html>
