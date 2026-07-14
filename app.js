@@ -171,7 +171,7 @@
     // opacity — dragging a word fades it out; drag far enough and it's gone
     let op = envelope(cue, localT, life);
     const ds = dragState[idx];
-    if (ds) op *= Math.max(0, 1 - Math.hypot(ds.dx, ds.dy) / KILL_DIST);
+    if (ds && dragIdx === idx) op *= Math.max(0.25, 1 - Math.hypot(ds.dx, ds.dy) / (KILL_DIST * 1.5));  // faint only while actively dragging
     if (el.dataset.dead) { op = 0; el.style.pointerEvents = "none"; }  // gone → don't hold the grab cursor
     el.style.opacity = op;
 
@@ -553,11 +553,10 @@
   window.addEventListener("mouseup", function () {
     if (dragIdx == null) return;
     const ds = dragState[dragIdx], el = mounted.get(dragIdx);
-    if (ds && Math.hypot(ds.dx, ds.dy) > KILL_DIST * 0.9) {
-      if (el) { el.dataset.dead = "1"; el.style.pointerEvents = "none"; }  // gone → cursor goes blank
-    } else {
-      delete dragState[dragIdx];              // otherwise snap back
+    if (ds && Math.hypot(ds.dx, ds.dy) > KILL_DIST) {
+      if (el) { el.dataset.dead = "1"; el.style.pointerEvents = "none"; }  // flung far → dissolve, cursor blank
     }
+    // otherwise keep dragState → the word STAYS exactly where you dropped it (no snap-back)
     dragIdx = null;
     document.body.classList.remove("is-dragging");
   });
