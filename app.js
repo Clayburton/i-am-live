@@ -32,6 +32,7 @@
   const whySubmit = document.getElementById("whySubmit");
   const btnEls    = {};                              // cueIdx -> lyric-button element
   let whyDone = false, hauntEl = null, hauntNext = 0; // "why didn't you care?" answer haunting the bg
+  let whyEggNext = 0;                                 // sporadic hidden "(why?)" eggs after the first (why)
 
   const ROLE_CLASS = {
     sans: "r-sans", impact: "r-impact", cond: "r-cond",
@@ -171,7 +172,7 @@
     let op = envelope(cue, localT, life);
     const ds = dragState[idx];
     if (ds) op *= Math.max(0, 1 - Math.hypot(ds.dx, ds.dy) / KILL_DIST);
-    if (el.dataset.dead) op = 0;
+    if (el.dataset.dead) { op = 0; el.style.pointerEvents = "none"; }  // gone → don't hold the grab cursor
     el.style.opacity = op;
 
     // fit cues set a crisp px font-size (recomputed live so it tracks the viewport);
@@ -271,7 +272,23 @@
 
     updateEggs(t);   // reveal/hide the hidden easter-egg lyrics for this moment
     updateWhy(t);    // the "why didn't you care?" prompt + its haunting answer
+    if (t > 88 && t >= whyEggNext) {   // after the first (why): rarely hide a "(why?)" to find
+      whyEggNext = t + 10 + Math.random() * 18;
+      if (eggLayer.querySelectorAll(".why-egg").length < 3) spawnWhyEgg();
+    }
     if (scare > 0) { scare = Math.max(0, scare - 0.012); applyScare(); }   // slowly calm down
+  }
+  function spawnWhyEgg() {
+    const roles = ["r-sans", "r-impact", "r-cond", "r-serif", "r-serifIt", "r-mono", "r-hook"];
+    const el = document.createElement("div");
+    el.className = "egg why-egg " + roles[(Math.random() * roles.length) | 0];
+    el.textContent = "(why?)";
+    el.style.left = (12 + Math.random() * 76) + "%";
+    el.style.top  = (14 + Math.random() * 72) + "%";
+    el.style.fontSize = (2.4 + Math.random() * 3.4) + "vh";
+    el.style.transform = "translate(-50%,-50%) rotate(" + ((Math.random() - 0.5) * 20 | 0) + "deg)";
+    eggLayer.appendChild(el);
+    setTimeout(function () { if (el.parentNode) el.remove(); }, 13000);  // don't linger forever
   }
 
   function updateWhy(t) {
@@ -352,8 +369,9 @@
     topbar.hidden = false;
     running = true;
     scare = 0; applyScare();
-    whyDone = false; whyBox.hidden = true;
+    whyDone = false; whyBox.hidden = true; whyEggNext = 0;
     if (hauntEl) { hauntEl.remove(); hauntEl = null; }
+    eggLayer.querySelectorAll(".why-egg").forEach(function (el) { el.remove(); });
     audio.currentTime = 0;
     const p = audio.play();
     if (p && p.catch) p.catch(function (e) { console.warn("play blocked:", e); });
@@ -390,8 +408,9 @@
     document.body.classList.add("playing");
     running = true;
     scare = 0; applyScare();
-    whyDone = false; whyBox.hidden = true;
+    whyDone = false; whyBox.hidden = true; whyEggNext = 0;
     if (hauntEl) { hauntEl.remove(); hauntEl = null; }
+    eggLayer.querySelectorAll(".why-egg").forEach(function (el) { el.remove(); });
     for (const k in dragState) delete dragState[k];
     audio.load();                 // reliably rewinds to 0 even where seeking is blocked
     const p = audio.play();
@@ -512,7 +531,16 @@
 
   /* ---------- grab a word and drag it; fling it far and it dissolves ---------- */
   stage.addEventListener("mousedown", function (e) {
-    if (!running || !e.target.closest) return;
+    if (!running) return;
+    // click a hidden "(why?)" you found with the spotlight → it disappears
+    const wes = eggLayer.querySelectorAll(".why-egg");
+    for (let i = 0; i < wes.length; i++) {
+      const r = wes[i].getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+        wes[i].remove(); e.preventDefault(); return;
+      }
+    }
+    if (!e.target.closest) return;
     const cel = e.target.closest(".cue");
     if (!cel || cel.dataset.idx == null) return;
     dragIdx = +cel.dataset.idx;
@@ -526,7 +554,7 @@
     if (dragIdx == null) return;
     const ds = dragState[dragIdx], el = mounted.get(dragIdx);
     if (ds && Math.hypot(ds.dx, ds.dy) > KILL_DIST * 0.9) {
-      if (el) el.dataset.dead = "1";          // flung far → gone for the rest of its life
+      if (el) { el.dataset.dead = "1"; el.style.pointerEvents = "none"; }  // gone → cursor goes blank
     } else {
       delete dragState[dragIdx];              // otherwise snap back
     }

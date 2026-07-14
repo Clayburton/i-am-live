@@ -80,13 +80,13 @@ const CUES = [
   { s: 144.478, e: 145.812, text: "I AM",       role: "impact",  fit: .55, y: 44, case: "upper" },
   { s: 147.614, e: 150.817, text: "i am",       role: "serifIt", fit: .5,  y: 45, weight: 700 },
   { s: 150.817, e: 152.085, text: "i am",       role: "mono",    size: 6,  y: 45, case: "lower", track: .12 },
-  { s: 153.587, e: 155.122, text: "I AM I AM",  role: "hook",    fit: .8,  y: 44, case: "upper", fx: "melt" },
+  { s: 153.587, e: 155.122, text: "I AM I AM",  role: "hook",    fit: .8,  y: 44, case: "upper" },
   { s: 157.457, e: 159.326, text: "I A M",      role: "cond",    fit: .82, fitW: .5, rot: -90, case: "upper" },
   { s: 159.326, e: 159.960, text: "I A M I A M", role: "impact", fit: .94, track: .02, y: 44, case: "upper" },
   { s: 160.861, e: 163.163, text: "i am i am",  role: "serifIt", fit: .66, y: 44, case: "lower", skew: -10 },
   { s: 163.163, e: 163.663, text: "I AM",       role: "cond",    size: 30, y: 44, case: "upper" },
   { s: 168.568, e: 169.500, text: "I AM",       role: "serif",   fit: .5,  y: 44, case: "upper", weight: 900 },
-  { s: 169.803, e: 174.574, text: "I AM",       role: "hook",    fit: .74, y: 43, case: "upper", fx: "melt" },
+  { s: 169.803, e: 174.574, text: "I AM",       role: "hook",    fit: .74, y: 43, case: "upper" },
 
   /* --- a swarm of little "I AM"s around the big ones, filling the finale so it comes alive --- */
   { s: 145.9, e: 148.0, text: "i am", role: "serif",   size: 3.2, x: 14, y: 20, case: "lower", enter: "fade", dur: .25 },
