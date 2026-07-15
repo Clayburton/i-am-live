@@ -1,31 +1,21 @@
 <!-- ============================================================
      i am — clay and kelsy · live lyric video
      Paste this whole block into a WordPress "Custom HTML" block.
+     (Replaces any previous version of the block — one block, no
+     plugins, no PHP.)
 
-     NOTE ON THE WHITE iOS BARS: iOS Safari colors its status bar +
-     toolbar from the TOP page's <meta name="theme-color"> — and it
-     only honors the tag if it's in <head> at PAGE LOAD. The script
-     below injects it after load, which iOS IGNORES (verified on the
-     live page). The GUARANTEED fix is a PHP snippet in <head>.
-
-     ⚠ clayandkelsy.com is WordPress.com-hosted (Atomic): Maywood is
-     WordPress.com's own child theme and gets auto-updated, so edits
-     to its functions.php CAN BE WIPED by a theme update. Put the
-     snippet in a snippet plugin (WPCode — Plugins ▸ Add New ▸
-     "WPCode" ▸ new PHP snippet, location "Run Everywhere") instead:
-
-         add_action('wp_head', function () {
-             if ( is_page(6311) ) {   // 6311 = the /i-am-i-am/ page (verified from body class)
-                 echo '<meta name="theme-color" content="#000000">' . "\n";
-                 echo '<meta name="apple-mobile-web-app-capable" content="yes">' . "\n";
-                 echo '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">' . "\n";
-             }
-         });
-
-     Scoped to page ID 6311, so no other page is affected. The live
-     page ships NO theme-color of its own (verified), so this tag is
-     the only one — nothing conflicts.
+     WHY THE <style> LINE: iOS Safari paints its status-bar area and
+     the surround of its bottom toolbar with the TOP page's html/body
+     background color. The theme's background is white → white strips
+     around the show on mobile. Painting the parent page black turns
+     both dark. (A <meta theme-color> can't be added reliably from a
+     block — iOS only reads it from <head> at load — so page
+     background IS the lever available to a Custom HTML block.)
+     The style is inside this block, so it only affects this page.
      ============================================================ -->
+<style>
+  html, body { background: #000 !important; }
+</style>
 <div id="iam-embed" style="position:relative;width:100vw;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;height:100svh;height:100dvh;background:#000;overflow:hidden;">
   <iframe
     src="https://clayburton.github.io/i-am-live/"
@@ -35,27 +25,3 @@
     style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block;">
   </iframe>
 </div>
-<script>
-(function () {
-  var BLACK = '#000000';
-  function paint() {
-    var metas = document.querySelectorAll('meta[name="theme-color"]');
-    if (!metas.length) {
-      var m = document.createElement('meta');
-      m.setAttribute('name', 'theme-color');
-      document.head.appendChild(m);
-      metas = document.querySelectorAll('meta[name="theme-color"]');
-    }
-    // override EVERY theme-color tag (a theme may ship light/dark scheme variants)
-    for (var i = 0; i < metas.length; i++) {
-      metas[i].removeAttribute('media');
-      metas[i].setAttribute('content', BLACK);
-    }
-  }
-  paint();
-  window.addEventListener('pageshow', paint);
-  document.addEventListener('visibilitychange', paint);
-  // a hair taller than the viewport so one upward swipe lets Safari minimize its toolbar
-  try { document.documentElement.style.minHeight = 'calc(100dvh + 2px)'; } catch (e) {}
-}());
-</script>
