@@ -245,6 +245,21 @@
     }
   }
 
+  /* ---------- keep the browser chrome (iOS status bar / toolbar) matching the show ----------
+     Direct open: live-update our own theme-color meta (honored because it exists at load).
+     Embedded: postMessage the color; the WordPress block paints the parent page to match,
+     so the white/black cuts strobe the phone's status bar + toolbar too. */
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  let lastBcast = null;
+  function broadcastBg(color) {
+    if (color === lastBcast) return;
+    lastBcast = color;
+    if (themeMeta) themeMeta.setAttribute("content", color);
+    if (window.parent !== window) {
+      try { window.parent.postMessage({ iam: "bg", color: color }, "*"); } catch (e) {}
+    }
+  }
+
   /* ---------- render one timestamp (rAF-independent) ---------- */
   let lastT = 0;
   function renderAt(t) {
@@ -253,6 +268,7 @@
     const bg = bgAt(t);
     stage.style.setProperty("--bg", bg);
     stage.style.setProperty("--fg", lum(bg) > 0.5 ? "#000" : "#fff");
+    broadcastBg(bg);
 
     // cues
     for (let i = 0; i < CUES.length; i++) {
@@ -354,8 +370,7 @@
     stage.classList.add("is-live");
     stage.setAttribute("aria-hidden", "false");
     document.body.classList.add("playing");    // hide the arrow — spotlight is the cursor
-    var tc = document.querySelector('meta[name="theme-color"]');   // black out the iOS status bar/toolbar for the show
-    if (tc) tc.setAttribute("content", "#000000");
+    broadcastBg("#000000");   // black out the browser chrome; renderAt keeps it matched to every cut from here
     chrome.hidden = false;
     topbar.hidden = false;
     running = true;

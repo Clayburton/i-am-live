@@ -4,19 +4,17 @@
      (Replaces any previous version of the block — one block, no
      plugins, no PHP.)
 
-     WHY THE <style> LINE: iOS Safari paints its status-bar area and
-     the surround of its bottom toolbar with the TOP page's html/body
-     background color. The theme's background is white → white strips
-     around the show on mobile. Painting the parent page black turns
-     both dark. (A <meta theme-color> can't be added reliably from a
-     block — iOS only reads it from <head> at load — so page
-     background IS the lever available to a Custom HTML block.)
-     The style is inside this block, so it only affects this page.
+     HOW THE iOS BARS WORK: Safari paints its status-bar area and
+     bottom-toolbar surround from the TOP page's html/body background.
+     The <style> below starts them white to match the landing; the
+     <script> listens for color messages from the lyric video and
+     repaints the parent page on every white/black cut — so the
+     strobe extends into the phone's own chrome.
      ============================================================ -->
 <style>
-  html, body { background: #000 !important; }
+  html, body { background: #fff !important; transition: none !important; }
 </style>
-<div id="iam-embed" style="position:relative;width:100vw;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;height:100svh;height:100dvh;background:#000;overflow:hidden;">
+<div id="iam-embed" style="position:relative;width:100vw;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;height:100svh;height:100dvh;background:#fff;overflow:hidden;">
   <iframe
     src="https://clayburton.github.io/i-am-live/"
     title="i am — clay and kelsy"
@@ -25,3 +23,17 @@
     style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block;">
   </iframe>
 </div>
+<script>
+(function () {
+  var wrap = document.getElementById('iam-embed');
+  window.addEventListener('message', function (e) {
+    if (e.origin !== 'https://clayburton.github.io') return;   // only trust the lyric video
+    var d = e.data;
+    if (!d || d.iam !== 'bg' || typeof d.color !== 'string') return;
+    if (!/^#[0-9a-fA-F]{3,8}$/.test(d.color)) return;          // colors only
+    document.documentElement.style.setProperty('background', d.color, 'important');
+    document.body.style.setProperty('background', d.color, 'important');
+    if (wrap) wrap.style.setProperty('background', d.color, 'important');
+  });
+}());
+</script>
