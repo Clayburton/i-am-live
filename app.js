@@ -354,6 +354,8 @@
     stage.classList.add("is-live");
     stage.setAttribute("aria-hidden", "false");
     document.body.classList.add("playing");    // hide the arrow — spotlight is the cursor
+    var tc = document.querySelector('meta[name="theme-color"]');   // black out the iOS status bar/toolbar for the show
+    if (tc) tc.setAttribute("content", "#000000");
     chrome.hidden = false;
     topbar.hidden = false;
     running = true;
