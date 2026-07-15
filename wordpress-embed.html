@@ -4,22 +4,27 @@
 
      NOTE ON THE WHITE iOS BARS: iOS Safari colors its status bar +
      toolbar from the TOP page's <meta name="theme-color"> — and it
-     reads that tag at PAGE LOAD. The script below overrides it after
-     load, which usually works, but some themes pin their own tag and
-     iOS then ignores a late change. If the top bar is still white,
-     use the GUARANTEED fix instead: add this to the Maywood child
-     theme's functions.php (Appearance ▸ Theme File Editor), which puts
-     the tag in <head> at load so iOS always honors it:
+     only honors the tag if it's in <head> at PAGE LOAD. The script
+     below injects it after load, which iOS IGNORES (verified on the
+     live page). The GUARANTEED fix is a PHP snippet in <head>.
+
+     ⚠ clayandkelsy.com is WordPress.com-hosted (Atomic): Maywood is
+     WordPress.com's own child theme and gets auto-updated, so edits
+     to its functions.php CAN BE WIPED by a theme update. Put the
+     snippet in a snippet plugin (WPCode — Plugins ▸ Add New ▸
+     "WPCode" ▸ new PHP snippet, location "Run Everywhere") instead:
 
          add_action('wp_head', function () {
-             if ( is_page('i-am-i-am') ) {
-                 echo '<meta name="theme-color" content="#000000">';
-                 echo '<meta name="apple-mobile-web-app-capable" content="yes">';
-                 echo '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">';
+             if ( is_page(6311) ) {   // 6311 = the /i-am-i-am/ page (verified from body class)
+                 echo '<meta name="theme-color" content="#000000">' . "\n";
+                 echo '<meta name="apple-mobile-web-app-capable" content="yes">' . "\n";
+                 echo '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">' . "\n";
              }
          });
 
-     (Scoped to the i-am-i-am page, so no other page is affected.)
+     Scoped to page ID 6311, so no other page is affected. The live
+     page ships NO theme-color of its own (verified), so this tag is
+     the only one — nothing conflicts.
      ============================================================ -->
 <div id="iam-embed" style="position:relative;width:100vw;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;height:100svh;height:100dvh;background:#000;overflow:hidden;">
   <iframe
