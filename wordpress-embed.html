@@ -1,9 +1,25 @@
 <!-- ============================================================
      i am — clay and kelsy · live lyric video
      Paste this whole block into a WordPress "Custom HTML" block.
-     It full-bleeds an immersive frame that loads the live page,
-     and tints iOS Safari's status bar + toolbar black so the show
-     isn't framed by white bars (as fullscreen as the web allows).
+
+     NOTE ON THE WHITE iOS BARS: iOS Safari colors its status bar +
+     toolbar from the TOP page's <meta name="theme-color"> — and it
+     reads that tag at PAGE LOAD. The script below overrides it after
+     load, which usually works, but some themes pin their own tag and
+     iOS then ignores a late change. If the top bar is still white,
+     use the GUARANTEED fix instead: add this to the Maywood child
+     theme's functions.php (Appearance ▸ Theme File Editor), which puts
+     the tag in <head> at load so iOS always honors it:
+
+         add_action('wp_head', function () {
+             if ( is_page('i-am-i-am') ) {
+                 echo '<meta name="theme-color" content="#000000">';
+                 echo '<meta name="apple-mobile-web-app-capable" content="yes">';
+                 echo '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">';
+             }
+         });
+
+     (Scoped to the i-am-i-am page, so no other page is affected.)
      ============================================================ -->
 <div id="iam-embed" style="position:relative;width:100vw;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;height:100svh;height:100dvh;background:#000;overflow:hidden;">
   <iframe
@@ -16,14 +32,25 @@
 </div>
 <script>
 (function () {
-  // iOS Safari colors the status bar + bottom toolbar from the TOP page's
-  // theme-color. This block runs on the WordPress page (not the iframe), so
-  // setting it here is what turns those white bars black on mobile.
-  var m = document.querySelector('meta[name="theme-color"]');
-  if (!m) { m = document.createElement('meta'); m.setAttribute('name', 'theme-color'); document.head.appendChild(m); }
-  m.setAttribute('content', '#000000');
-  // Nudge the page a hair taller than the viewport so a single upward swipe
-  // lets Safari minimize its bottom toolbar (it can't be removed outright).
+  var BLACK = '#000000';
+  function paint() {
+    var metas = document.querySelectorAll('meta[name="theme-color"]');
+    if (!metas.length) {
+      var m = document.createElement('meta');
+      m.setAttribute('name', 'theme-color');
+      document.head.appendChild(m);
+      metas = document.querySelectorAll('meta[name="theme-color"]');
+    }
+    // override EVERY theme-color tag (a theme may ship light/dark scheme variants)
+    for (var i = 0; i < metas.length; i++) {
+      metas[i].removeAttribute('media');
+      metas[i].setAttribute('content', BLACK);
+    }
+  }
+  paint();
+  window.addEventListener('pageshow', paint);
+  document.addEventListener('visibilitychange', paint);
+  // a hair taller than the viewport so one upward swipe lets Safari minimize its toolbar
   try { document.documentElement.style.minHeight = 'calc(100dvh + 2px)'; } catch (e) {}
 }());
 </script>
