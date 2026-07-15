@@ -32,11 +32,18 @@ html, body {
   background: var(--bg);
   overflow: hidden;
   z-index: 1;
-  /* the show is hidden until the gate is passed */
+  /* the show is hidden until play is pressed */
   opacity: 0;
   transition: opacity .25s ease;
+  /* MOBILE: a finger on the stage moves the spotlight / drags words — it must NOT scroll or zoom the page */
+  touch-action: none;
+  -ms-touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .stage.is-live { opacity: 1; }
+/* stop pull-to-refresh / rubber-band while the show owns the screen */
+body.playing { overscroll-behavior: none; touch-action: none; }
 
 /* holds all cues */
 .cue-layer { position: absolute; inset: 0; }

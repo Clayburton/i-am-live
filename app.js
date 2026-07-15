@@ -10,13 +10,10 @@
   const cueLayer = document.getElementById("cueLayer");
   const audio    = document.getElementById("song");
   const landing  = document.getElementById("landing");
-  const gate      = document.getElementById("gate");
   const chrome    = document.getElementById("chrome");
   const endcard   = document.getElementById("endcard");
   const playBtn   = document.getElementById("playBtn");
-  const enterBtn  = document.getElementById("enterBtn");
   const replayBtn = document.getElementById("replayBtn");
-  const reduceChk = document.getElementById("reduceChk");
   const scrub     = document.getElementById("scrub");
   const scrubFill = document.getElementById("scrubFill");
   const timecode  = document.getElementById("timecode");
@@ -220,7 +217,7 @@
     b.textContent = cue.btn;
     b.style.left = (18 + Math.random() * 64) + "vw";     // pop up anywhere
     b.style.top  = (26 + Math.random() * 48) + "vh";
-    b.addEventListener("mousedown", function (e) { e.stopPropagation(); });   // don't start a word-drag
+    b.addEventListener("pointerdown", function (e) { e.stopPropagation(); });   // don't start a word-drag
     b.addEventListener("click", function (e) { e.stopPropagation(); hitButton(b); });
     uiLayer.appendChild(b);
     btnEls[idx] = b;
@@ -351,17 +348,9 @@
   }
 
   /* ---------- flow ---------- */
-  function showGate() {
+  function start() {
     landing.classList.add("is-gone");
     setTimeout(function () { landing.hidden = true; }, 500);
-    gate.hidden = false;
-    reduceChk.checked = reduceFlash;
-  }
-
-  function start() {
-    reduceFlash = reduceChk.checked;
-    gate.classList.add("is-gone");
-    setTimeout(function () { gate.hidden = true; }, 400);
     stage.classList.add("is-live");
     stage.setAttribute("aria-hidden", "false");
     document.body.classList.add("playing");    // hide the arrow — spotlight is the cursor
@@ -379,8 +368,7 @@
     poke();
   }
 
-  playBtn.addEventListener("click", showGate);
-  enterBtn.addEventListener("click", start);
+  playBtn.addEventListener("click", start);
 
   // (mouse interaction to be chosen — see options; start/stop is the spacebar)
 
@@ -430,7 +418,7 @@
       topbar.classList.remove("is-visible");
     }, 5000);   // move the mouse → controls come back for 5s (cursor always stays)
   }
-  window.addEventListener("mousemove", function () { if (running) poke(); });
+  window.addEventListener("pointermove", function () { if (running) poke(); });
   window.addEventListener("touchstart", function () { if (running) poke(); }, { passive: true });
 
   // fullscreen
@@ -461,8 +449,7 @@
     const isSpace = e.code === "Space" || e.key === " ";
     const isEnter = e.key === "Enter";
     if (isSpace || isEnter) {
-      if (!landing.classList.contains("is-gone")) { e.preventDefault(); showGate(); }
-      else if (!gate.hidden && !gate.classList.contains("is-gone")) { e.preventDefault(); start(); }
+      if (!landing.classList.contains("is-gone")) { e.preventDefault(); start(); }
       else if (!endcard.hidden) { e.preventDefault(); replayBtn.click(); }          // replay
       else if (running && isSpace) { e.preventDefault(); if (audio.paused) audio.play(); else audio.pause(); poke(); }
     } else if (e.key === "[" || e.key === "]") {
@@ -480,7 +467,7 @@
     invDisc.style.top  = mouse.y + "px";
     spotAt(mouse.x, mouse.y);                 // reveal any hidden easter-egg text near the cursor
   }
-  window.addEventListener("mousemove", function (e) {
+  window.addEventListener("pointermove", function (e) {
     mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true;
     if (running) { moveDisc(); invDisc.classList.add("is-on"); dodge(e.clientX, e.clientY); }
     if (dragIdx != null) {
@@ -530,7 +517,7 @@
   function bumpScare() { scare = Math.min(8, scare + 1.2); applyScare(); }
 
   /* ---------- grab a word and drag it; fling it far and it dissolves ---------- */
-  stage.addEventListener("mousedown", function (e) {
+  stage.addEventListener("pointerdown", function (e) {
     if (!running) return;
     // click a hidden "(why?)" you found with the spotlight → it disappears
     const wes = eggLayer.querySelectorAll(".why-egg");
@@ -550,7 +537,7 @@
     document.body.classList.add("is-dragging");
     e.preventDefault();
   });
-  window.addEventListener("mouseup", function () {
+  window.addEventListener("pointerup", function () {
     if (dragIdx == null) return;
     const ds = dragState[dragIdx], el = mounted.get(dragIdx);
     if (ds && Math.hypot(ds.dx, ds.dy) > KILL_DIST) {
@@ -560,13 +547,18 @@
     dragIdx = null;
     document.body.classList.remove("is-dragging");
   });
+  // touch drag interrupted by a system gesture → don't leave a word stuck to the finger
+  window.addEventListener("pointercancel", function () {
+    dragIdx = null;
+    document.body.classList.remove("is-dragging");
+  });
 
   whySubmit.addEventListener("click", submitWhy);
   whyInput.addEventListener("keydown", function (e) {
     if (e.key === "Enter") { e.preventDefault(); submitWhy(); }
     e.stopPropagation();                         // type freely (spacebar won't pause)
   });
-  whyInput.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+  whyInput.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
 
   initEggs();
 
@@ -582,7 +574,6 @@
     freeze: function (t) {
       clockOverride = t;
       landing.classList.add("is-gone"); landing.hidden = true;
-      gate.classList.add("is-gone");    gate.hidden = true;
       endcard.hidden = true;
       stage.classList.add("is-live"); stage.setAttribute("aria-hidden", "false");
       running = true;
