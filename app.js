@@ -363,8 +363,50 @@
     });
   }
 
+  /* ---------- the play triangle IS the loading bar ----------
+     A hairline outline appears immediately; real load progress fills it
+     black left-to-right; at 100% it settles with a pop and goes live. */
+  const triRect = document.getElementById("triRect");
+  let triShown = 0, triReal = 0, triTrickle = 0, triReady = false;
+  function triProgress(p) { triReal = Math.max(triReal, Math.min(1, p || 0)); }
+  const triTimer = setInterval(function () {
+    triTrickle = Math.min(triTrickle + 0.004, 0.3);       // always alive, never lies far ahead
+    const t = Math.max(triReal, triTrickle);
+    triShown += (t - triShown) * 0.14;
+    if (triReal >= 1 && triShown > 0.985) triShown = 1;
+    if (triRect) triRect.setAttribute("width", (triShown * 62).toFixed(2));
+    if (triShown >= 1) {
+      clearInterval(triTimer);
+      triReady = true;
+      playBtn.classList.remove("is-loading");
+      playBtn.classList.add("is-ready");
+    }
+  }, 40);
+  window.__tri = triProgress;
+
+  playBtn.classList.add("is-loading");
+  (function () {
+    let fontsP = 0, audioP = 0;
+    function upd() { triProgress(0.25 * fontsP + 0.75 * audioP); }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fontsP = 1; upd(); });
+    setTimeout(function () { fontsP = 1; upd(); }, 5000);
+    function aud() {
+      try {
+        if (audio.readyState >= 4) audioP = 1;
+        else if (audio.duration && audio.buffered.length) audioP = Math.max(audioP, Math.min(1, (audio.buffered.end(audio.buffered.length - 1) / audio.duration) / 0.8));
+      } catch (e) {}
+      upd();
+    }
+    audio.addEventListener("progress", aud);
+    audio.addEventListener("canplaythrough", function () { audioP = 1; upd(); });
+    const poll = setInterval(function () { aud(); if (audioP >= 1 && fontsP >= 1) clearInterval(poll); }, 300);
+    setTimeout(function () { fontsP = 1; audioP = 1; upd(); }, 15000);   // never strand the button
+    aud();
+  })();
+
   /* ---------- flow ---------- */
   function start() {
+    if (!triReady) return;
     landing.classList.add("is-gone");
     setTimeout(function () { landing.hidden = true; }, 500);
     stage.classList.add("is-live");
