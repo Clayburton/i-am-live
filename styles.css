@@ -236,7 +236,7 @@ body.is-jolt #stage { animation: jolt .34s ease; }
 }
 .landing__title {
   display: block;
-  width: clamp(220px, 48vw, 520px);   /* the sharp vector logotype scales crisply at any size */
+  width: clamp(190px, 42vw, 450px);   /* the sharp vector logotype scales crisply at any size */
   height: auto;
   margin: 0 auto 3rem;
 }
