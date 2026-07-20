@@ -526,15 +526,23 @@
     invDisc.style.top  = mouse.y + "px";
     spotAt(mouse.x, mouse.y);                 // reveal any hidden easter-egg text near the cursor
   }
+  const landingDisc = document.getElementById("landingDisc");
   window.addEventListener("pointermove", function (e) {
     mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true;
     if (running) { moveDisc(); invDisc.classList.add("is-on"); dodge(e.clientX, e.clientY); }
+    else if (!landing.classList.contains("is-gone")) {
+      // before play: the spotlight is already alive on the landing — a hint of what's coming
+      landing.classList.add("is-spot");
+      landingDisc.style.left = mouse.x + "px";
+      landingDisc.style.top  = mouse.y + "px";
+      landingDisc.classList.add("is-on");
+    }
     if (dragIdx != null) {
       dragState[dragIdx] = { dx: dragBase.x + (e.clientX - dragFrom.x), dy: dragBase.y + (e.clientY - dragFrom.y) };
     }
   });
   window.addEventListener("mouseout", function (e) {
-    if (!e.relatedTarget) { mouse.inside = false; invDisc.classList.remove("is-on"); }
+    if (!e.relatedTarget) { mouse.inside = false; invDisc.classList.remove("is-on"); landingDisc.classList.remove("is-on"); }
   });
   /* ---------- easter eggs revealed by the spotlight ---------- */
   function initEggs() {

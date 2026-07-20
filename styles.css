@@ -63,6 +63,11 @@ body.playing { overscroll-behavior: none; touch-action: none; }
 }
 .inv-disc.is-on { opacity: 1; }
 
+/* the landing spotlight hint: a fixed disc that inverts the white landing under the pointer */
+.landing-disc { position: fixed; z-index: 2; }
+#landing.is-spot { cursor: none; }
+#landing.is-spot * { cursor: none !important; }
+
 /* while dragging a word */
 body.is-dragging, body.is-dragging .cue { cursor: grabbing; }
 
