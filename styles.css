@@ -235,13 +235,10 @@ body.is-jolt #stage { animation: jolt .34s ease; }
   margin-bottom: 2.2rem;
 }
 .landing__title {
-  font-family: "Playfair Display", Georgia, serif;
-  font-style: italic;
-  font-weight: 900;
-  font-size: clamp(72px, 22vw, 260px);
-  line-height: .9;
-  color: #111;
-  margin-bottom: 3rem;
+  display: block;
+  width: clamp(220px, 48vw, 520px);   /* the sharp vector logotype scales crisply at any size */
+  height: auto;
+  margin: 0 auto 3rem;
 }
 .landing__hint {
   font-family: var(--mono);
